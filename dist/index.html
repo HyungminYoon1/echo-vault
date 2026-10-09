@@ -1,0 +1,44 @@
+<!doctype html>
+<html lang="ko">
+<head>
+<meta charset="UTF-8" />
+<meta name="viewport" content="width=device-width, initial-scale=1" />
+<meta name="theme-color" content="#0b121c" />
+<meta name="referrer" content="no-referrer" />
+<meta http-equiv="Content-Security-Policy" content="default-src 'self'; script-src 'self'; style-src 'self'; img-src 'self' data:; connect-src 'none'; frame-src 'none'; object-src 'none'; base-uri 'self'; form-action 'none'" />
+<meta name="description" content="세 개의 과거와 협동하는 시간 반복 잠입 퍼즐. 15초의 경로를 기록하고 금고를 탈출하세요." />
+<title>ECHO VAULT — 시간의 금고</title>
+<link rel="stylesheet" href="styles.css" />
+<link rel="icon" href="favicon.svg" />
+<script type="module" src="src/app.js"></script>
+</head>
+<body>
+<a class="skip" href="#board">금고 조작으로 건너뛰기</a>
+<header class="topbar"><a class="brand" href="./"><span class="brand-icon" aria-hidden="true">◈</span><span>ECHO <b>VAULT</b><small>시간의 금고</small></span></a><div class="operation-tag"><i></i> TEMPORAL HEIST / 01</div><nav><a href="https://hyungminyoon1.github.io/web-lab/">WEB LAB ↗</a><button id="help" type="button">조작 안내 <kbd>?</kbd></button><button id="campaign" type="button">금고 선택 <span id="campaign-count">01 / 12</span></button></nav></header>
+<main class="game-shell">
+<section class="mission-bar" aria-labelledby="level-title"><div><p class="eyebrow" id="chapter-label">CHAPTER 01 / THE FIRST ECHO</p><h1 id="level-title">잔상의 약속</h1><p id="objective">잔상을 남겨 잠금장치를 열고 출구로 이동하세요.</p></div><div class="mission-stats"><div><span>DIFFICULTY</span><strong id="difficulty">HARD</strong></div><div><span>BEST THIS SESSION</span><strong id="best-score">—</strong></div><div><span>LOOP</span><strong id="loop-count">01</strong></div></div></section>
+<div class="play-layout">
+<section class="world-frame" aria-label="금고 공간">
+<div class="world-top"><span><i></i> VAULT SECTOR <b id="sector">01</b></span><span id="world-state">PLANNING / 시간이 멈춰 있습니다</span><button type="button" id="fullscreen" aria-label="금고 화면 전체화면">⛶</button></div>
+<div class="board-wrap"><canvas id="board" width="1000" height="640" tabindex="0" aria-label="금고 이동 영역. 방향키 또는 WASD로 한 칸 이동, Space는 대기, P는 재생/정지, R은 기록 후 되감기"></canvas><div class="world-caption"><span id="player-location">CURRENT / 2, 6</span><span>WASD · 방향키 이동 / SPACE 대기</span></div><div class="result-overlay" id="result-overlay" hidden><div class="result-card"><p class="eyebrow" id="result-kicker">TIMELINE CLOSED</p><h2 id="result-title">탈출 성공</h2><p id="result-copy"></p><div class="result-numbers" id="result-numbers"></div><div><button type="button" id="result-retry">같은 잔상으로 재시도</button><button class="primary" type="button" id="result-next">다음 금고 →</button></div></div></div></div>
+<div class="world-footer"><span><i class="current-dot"></i>현재</span><span><i class="echo-dot"></i>잔상</span><span>◈ 압력판</span><span>◇ 순서 코어</span><span>▰ 문</span><span class="exit-key">↗ 출구</span></div>
+</section>
+<aside class="intel-panel">
+<div class="intel-heading"><span>OPERATION INTEL</span><b>금고 구조</b></div>
+<section><h2>잠금장치 <span id="lock-count">0/1</span></h2><div id="lock-list"></div></section>
+<section><h2>서명 순서</h2><div class="core-list" id="core-list"></div></section>
+<section><h2>세 개의 과거 <span id="echo-count">0/3</span></h2><div id="echo-list"></div></section>
+<section class="laser-intel" id="laser-section"><h2>레이저 박자</h2><div id="laser-list"></div></section>
+<section class="hint-section"><button type="button" id="hint">개념 힌트 보기 <span>−300</span></button><p id="hint-copy" hidden></p></section>
+<p class="session-note">기록과 진행은 이 페이지에만 남습니다.</p>
+</aside>
+</div>
+<section class="timeline-panel" aria-label="기록 타임라인"><div class="timeline-head"><div><span class="eyebrow">15 SECOND WINDOW</span><h2>이번 반복의 기록</h2></div><div class="time-readout"><strong id="time-left">15.00</strong><span>SECONDS LEFT</span></div><button id="play" type="button" class="play-button">▶ 실시간 시작 <kbd>P</kbd></button></div><div id="timeline" class="timeline" aria-label="이동과 대기 기록"></div><div class="timeline-scale"><span>0s</span><span>5s</span><span>10s</span><span>15s</span></div></section>
+<section class="command-dock" aria-label="현재 반복 조작"><div class="main-commands"><button class="primary" id="record" type="button">◉ 기록 후 되감기 <kbd>R</kbd></button><button id="retry" type="button">↺ 이번 반복 다시</button><button id="undo" type="button">↶ 한 박자 취소 <kbd>Z</kbd></button><button id="remove-echo" type="button">마지막 잔상 삭제</button></div><div class="direction-pad" role="group" aria-label="방향 이동"><button type="button" data-move="left" aria-label="왼쪽 이동">←</button><button type="button" data-move="up" aria-label="위로 이동">↑</button><button type="button" data-move="wait" aria-label="한 박자 대기">·</button><button type="button" data-move="down" aria-label="아래로 이동">↓</button><button type="button" data-move="right" aria-label="오른쪽 이동">→</button></div></section>
+<p id="status" class="status-line" role="status" aria-live="polite">실시간 시작 없이도 방향키와 대기로 한 박자씩 계획할 수 있습니다.</p>
+</main>
+<dialog id="campaign-dialog"><div class="dialog-top"><div><p class="eyebrow">TWELVE SECURED WORLDS</p><h2>금고 선택</h2></div><button type="button" data-close="campaign-dialog" aria-label="금고 선택 닫기">×</button></div><p>처음부터 세 명의 과거가 필요한 마스터 금고까지. 모든 금고를 바로 선택할 수 있습니다.</p><div id="level-list" class="level-list"></div></dialog>
+<dialog id="help-dialog"><div class="dialog-top"><div><p class="eyebrow">HOW TO BEND TIME</p><h2>과거의 나를 남기는 방법</h2></div><button type="button" data-close="help-dialog" aria-label="조작 안내 닫기">×</button></div><ol><li><b>압력판까지 이동합니다.</b> 방향키/WASD와 Space 대기로 한 박자씩 계획하거나 실시간 모드로 움직입니다.</li><li><b>R로 기록 후 되감기.</b> 다음 반복에서 잔상이 동일 위치 기록을 재생하고, 기록이 끝나면 그 자리에 머뭅니다.</li><li><b>잔상과 현재의 내가 협동합니다.</b> 압력판은 표시된 충전 박자가 지나야 문을 열며, 손을 떼면 닫힙니다.</li><li><b>코어는 현재의 내가 순서대로 회수합니다.</b> 레이저의 다음 박자 표시를 보고 기다리거나 우회하세요. 모든 문이 열리고 코어 순서가 맞아야 출구가 인정됩니다.</li></ol><p>15초 = 60박자 · 최대 3잔상 · 한 박자 0.25초. 레이저에 잡히면 그 기록은 보관할 수 없습니다. 시간만 끝난 기록은 보관할 수 있습니다. P 정지/재생, Z 되돌리기. 숨긴 페이지는 정지하며 자동 재개하지 않습니다.</p><button class="primary" type="button" data-close="help-dialog">금고로 돌아가기</button></dialog>
+<noscript><p>이 게임은 브라우저 JavaScript가 필요합니다.</p></noscript>
+</body>
+</html>
