@@ -1,5 +1,32 @@
 # Decisions
 
+## D05 — Approved bounded private autosave (2026-10-09)
+
+- Context: The user explicitly approved local persistence, current-run resume and deletion. This supersedes the storage prohibition in D02 and page-memory statements in D03/D04 for these two documented keys only.
+- Options: memory-only; unrestricted snapshots; bounded versioned command logs validated by deterministic replay.
+- Decision: save schema 1 / campaign 2, key echo-vault-save-v1, maximum 131072 UTF-16 code units (256 KiB). Store one current run and up to 15 best plus 15 independent winning proofs, each at most three 60-command echoes and a 60-command current loop, at most 7440 replay commands. Reconstruct every echo via actual legal prior runs. Reject unknown versions, malformed input, terminal trailing commands, unsealable echoes, duplicate/invalid achievement records and out-of-bound fields. Do not load coordinates or points. No old durable format exists to migrate. All updates are synchronous after gameplay mutations, including hints/undo/retry/selection; no timer is persisted. Restored runs pause; session undo history is not persisted. Resume is explicit; starting another run replaces the current one.
+- Rationale: deterministic recovery with finite work and no remote identity; real private bests remain separate from independent completion. Hint use persists across rewind/retry/undo. Storage failure leaves gameplay usable with a visible notice. Corrupt records remain untouched until new gameplay or explicit deletion. Records remain until user clear/browser eviction; no timestamp-based retention or tracking.
+- Affected: architecture.md, requirements.md, README.md, dist/src/save.js, storage.js, app.js, tools/check.mjs, test/save.test.js.
+- Review: test doubles verify denial/quota-style exceptions and record isolation; parent must verify real reload/clear/storage denial in browser. Same-origin scripts/user edits can alter local storage; this is not an authentication or competitive score boundary.
+
+## D06 — Minimal gallery summary (2026-10-09)
+
+- Context: The approved cross-app contract uses web-lab-progress-v1. Only this repository may be edited.
+- Options: expose run payloads; count visits/assisted demos; report distinct actual durable independent achievements.
+- Decision: injected adapter with 8192-character limit and the 15-repo whitelist: data-mirage, echo-vault, light-route, logic-foundry, neon-tactics, orbit-courier, packet-journey, parcel-panic, pixel-kitchen, pocket-city, route-race, sense-lab, swarm-garden, think-forge, traffic-lab. Validate version 1, apps object, exact completed/total/updatedAt fields, integers 0 <= completed <= total <= 1000, canonical ISO timestamp. Own total is 15. Report only on hint-free campaign completion after the private write succeeds, recomputing the distinct count from all durable proofs. Intro is guided and excluded. Initial view/resume/hint/example/selection do not publish entries. Unchanged counts preserve updatedAt. Read-modify-write preserves every other validated entry. Clear deletes only own entry, never shared storage wholesale. Unknown/malformed shared data is left untouched and reported as unavailable.
+- Rationale: gallery badges can read one minimal aggregate without inspecting actions, identity or private proof payloads. Best-effort cross-tab writes are repairable from private evidence; no fabricated completion dates.
+- Affected: dist/src/progress.js, storage.js, app.js, test/save.test.js, tools/check.mjs, architecture.md, README.md.
+- Review: parent verifies identical whitelist/contract across apps and actual gallery integration. No other repository/backend is modified or provisioned.
+
+## D07 — Versioned temporal relay campaign and entry controls (2026-10-09)
+
+- Context: Final puzzles should require changing echo positions rather than permanent pressure latches. Preserve the existing campaign and provide immediate playable onboarding/mobile controls.
+- Options: overwrite v1 solutions; merely raise charge times; append v2 relay levels with executable schedules.
+- Decision: retain v1 IDs 1–12; add intro and IDs 13–15. The intro has no campaign record. Relay phases monitor only echoes: every listed ON plate occupied, every OFF plate empty, consecutive hold inside an inclusive beat interval. Required 2/2/3 echo teams activate the phases; incomplete teams can record but cannot exit. Phase completion is ordered, capped at five, doors require all phases plus usual charge, exit requires all doors/cores and a final inclusive time window. Missed deadlines fail and cannot be sealed. Level 13 requires A release/revisit; 14 also requires B release/revisit plus cores; 15 chains A/B/C, returns A then B, and retains a live laser. Offline legal movement witnesses prove each solution and negative timing/hold/missing-echo conditions.
+- Rationale: staged recordings must cooperate over time; simultaneous permanent latches cannot solve the new levels. No hidden score/state injection, examples, leaderboard or backend. All controls use the same model commands. First visit starts a small guided playable map; advanced entry and unrestricted selector remain available. Fit/zoom controls and mobile sticky input dock expose the same rules in compact space.
+- Affected: dist/src/levels.js, model.js, app.js, render.js, index.html, styles.css, tools/witnesses.mjs, test/model.test.js, test/relay.test.js, docs/verification.md.
+- Review: model solvability is proven locally, not a human challenge/fun rating. Parent owns browser E2E, accessibility/layout inspection, screenshots and publication. Prior browser evidence below concerns v1 only.
+
 ## D03 — 유한 게임 규칙과 재현 가능한 캠페인
 
 - Context: 높은 난도와 실제 실패/성공이 있는 게임이며 무작위 데이터가 불가능한 문제를 만들면 안 됩니다.

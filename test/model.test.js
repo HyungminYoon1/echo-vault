@@ -1,6 +1,7 @@
 import test from "node:test";
 import assert from "node:assert/strict";
-import {levels,getLevel} from "../dist/src/levels.js";
+import {createHash} from "node:crypto";
+import {levels,legacyLevels,getLevel} from "../dist/src/levels.js";
 import {createRun,advance,sealEcho,restartRun,removeEcho,plateStates,doorStates,hazardActive,evaluate,describe,echoPosition} from "../dist/src/model.js";
 import {solve,route} from "../tools/witnesses.mjs";
 const answers=new Map();
@@ -24,7 +25,8 @@ for(const level of levels)test("campaign "+level.id+" has actual legal multi-loo
  for(const hazard of level.hazards)if(hazardActive(hazard,state.tick))assert(!hazard.cells.some(([x,y])=>state.player.x===x&&state.player.y===y));
 });
 test("campaign structure and finite bounds",()=>{
- assert.equal(levels.length,12);assert.equal(levels.filter(l=>l.grade==="MASTER").length,6);
+ assert.equal(createHash("sha256").update(JSON.stringify(legacyLevels)).digest("hex"),"fb78c47c49883ea34ed3724b53d5178ab95606ad7b93acc365dc6efaf98d5c40","Original v1 geometry, goals, hazards and authored data remain unchanged");
+ assert.equal(legacyLevels.length,12);assert.equal(legacyLevels.filter(l=>l.grade==="MASTER").length,6);assert.equal(levels.length,15);
  for(const l of levels){assert(l.width<=20&&l.height<=12&&l.limit===60&&l.plates.length<=3);assert.equal(l.rows.length,l.height);assert(l.rows.every(r=>r.length===l.width));}
  assert.throws(()=>getLevel(0),RangeError);assert.throws(()=>createRun(999),RangeError);
 });

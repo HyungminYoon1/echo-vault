@@ -16,8 +16,10 @@ async function walk(dir){
   assert(!/(?:gh[pousr]_[A-Za-z0-9]{30,}|github_pat_[A-Za-z0-9_]{50,}|AKIA[A-Z0-9]{16}|-----BEGIN (?:RSA |EC |OPENSSH )?PRIVATE KEY-----)/.test(source),"Credential pattern detected; suppressed");
   if(extname(file)===".js"||extname(file)===".mjs"){
    execFileSync(process.execPath,["--check",file],{stdio:"inherit"});
-   assert(!/\bfetch\s*\(|\bXMLHttpRequest\b|\blocalStorage\b|\bsessionStorage\b|document\.cookie|\beval\s*\(|new\s+Function\b/.test(source),"No runtime external connections/persistence/eval");
-   if(/(?:model|levels|rules)\.(?:m?js)$/.test(file))assert(!/\b(document|window|AudioContext|requestAnimationFrame|performance)\b/.test(source),"Pure model boundary");
+   assert(!/\bfetch\s*\(|\bXMLHttpRequest\b|\bWebSocket\b|\bEventSource\b|\bsendBeacon\b|\bindexedDB\b|\bsessionStorage\b|document\.cookie|\beval\s*\(|new\s+Function\b/.test(source),"No runtime network/other persistence/eval");
+   if(file!==resolve(root,"src/storage.js"))assert(!/\blocalStorage\b/.test(source),"Storage only in approved adapter (D05)");
+   if(!["storage.js","progress.js"].some(name=>file===resolve(root,"src",name)))assert(!/\.(?:getItem|setItem|removeItem|clear)\s*\(/.test(source),"Storage access only in approved boundaries (D05/D06)");
+   if(/(?:model|levels|rules|save)\.(?:m?js)$/.test(file))assert(!/\b(document|window|globalThis|AudioContext|requestAnimationFrame|performance|Date)\b/.test(source),"Pure model/codec boundary");
    for(const [,ref] of source.matchAll(/(?:from\s*|import\s*)["'](\.[^"']+)["']/g)){const target=resolve(dirname(file),ref);assert(target.startsWith(root+sep));await readFile(target);}
   }
   if(extname(file)!==".html")continue;
@@ -31,4 +33,10 @@ async function walk(dir){
  }
 }
 await walk(root);
+const adapter=await readFile(resolve(root,"src/storage.js"),"utf8"),progress=await readFile(resolve(root,"src/progress.js"),"utf8");
+assert(adapter.includes('SAVE_KEY="echo-vault-save-v1"')&&progress.includes('PROGRESS_KEY="web-lab-progress-v1"'),"Only documented storage keys");
+assert(!/\.clear\s*\(/.test(adapter+progress),"Never clear another app's storage");
+const html=await readFile(resolve(root,"index.html"),"utf8"),app=await readFile(resolve(root,"src/app.js"),"utf8");
+const ids=[...html.matchAll(/\bid="([^"]+)"/g)].map(m=>m[1]);assert.equal(new Set(ids).size,ids.length,"Unique DOM ids");
+for(const [,id] of app.matchAll(/(?:\$|\btext)\("([^"]+)"/g))assert(ids.includes(id),"DOM binding exists: "+id);
 console.log("PASS: "+files+" public files; syntax, module/assets, privacy, pure model, CSP, UTF8/no-BOM/CRLF");

@@ -3,7 +3,8 @@ import {doorStates,plateStates,echoPosition,hazardActive} from "./model.js";
 const colors=["#64dccf","#c3a0f1","#f0a487"];
 const same=(a,b)=>a.x===b.x&&a.y===b.y;
 export function paint(ctx,state,time=0,motion=0){
- const level=getLevel(state.levelId),w=1000,h=640,size=46,ox=(w-level.width*size)/2,oy=60;
+ const level=getLevel(state.levelId),size=46,w=level.width*size+40,h=level.height*size+88,ox=20,oy=44;
+ if(ctx.canvas.width!==w||ctx.canvas.height!==h){ctx.canvas.width=w;ctx.canvas.height=h;}
  ctx.clearRect(0,0,w,h);ctx.fillStyle="#0b1421";ctx.fillRect(0,0,w,h);
  const backdrop=ctx.createRadialGradient(520,260,50,500,320,650);backdrop.addColorStop(0,"#23384a");backdrop.addColorStop(1,"#080f1a");ctx.fillStyle=backdrop;ctx.fillRect(0,0,w,h);
  ctx.strokeStyle="#43617518";ctx.lineWidth=1;for(let i=-500;i<1500;i+=45){ctx.beginPath();ctx.moveTo(i,0);ctx.lineTo(i+280,h);ctx.stroke();}

@@ -25,7 +25,7 @@ const base = [
   goals:["1","2","3"],hazards:[{cells:[[6,5]],period:9,on:3,offset:2},{cells:[[10,5]],period:11,on:4,offset:4},{cells:[[13,5]],period:8,on:2,offset:3}],hint:"세 기록, 세 서명, 세 박자. 각 잔상의 도착을 빠르게 만들면 현재 탈출에 쓸 15초를 확보할 수 있습니다."}
 ];
 function coordinate(rows,char){for(let y=0;y<rows.length;y++){const x=rows[y].indexOf(char);if(x>=0)return{x,y};}return null;}
-export const levels=Object.freeze(base.map((level,index)=>{
+export const legacyLevels=Object.freeze(base.map((level,index)=>{
  const count=index===0?1:(index===1||index===3||index===4||index===5)?2:3;
  const gateRows=[[5,5,5],[5,3,5],[3,7,5],[5,7,3],[5,3,5],[3,7,5],[3,7,3],[7,3,7],[3,7,5],[7,3,5],[3,7,7],[7,3,5]][index];
  const cells=Array.from({length:11},(_,y)=>Array.from({length:18},(_,x)=>x===0||x===17||y===0||y===10?"#":"."));
@@ -47,4 +47,35 @@ export const levels=Object.freeze(base.map((level,index)=>{
  const hazards=level.hazards.map((h,i)=>({...h,cells:[[6+i*5,gateRows[Math.min(i,2)]]]}));
  return Object.freeze({...level,hazards,id:index+1,width,height:rows.length,rows:Object.freeze(rows),start:coordinate(rows,"S"),exit:coordinate(rows,"X"),plates:Object.freeze(plates),doors:Object.freeze(doors),cores:Object.freeze(level.goals.map(id=>({id,...coordinate(rows,id)})))});
 }));
-export function getLevel(id){const level=levels.find(l=>l.id===id);if(!level)throw new RangeError("Unknown level");return level;}
+// Campaign v1 remains unchanged. v2 adds timed, echo-only relay programs.
+export const CAMPAIGN_VERSION=2;
+function authored(id,name,rows,extra={}){
+ const plates=["a","b","c"].map(id=>({id,...coordinate(rows,id)})).filter(p=>Number.isInteger(p.x));
+ const goals=["1","2","3"].filter(id=>coordinate(rows,id));
+ return Object.freeze({id,name,chapter:5,grade:"MASTER",charge:2,limit:60,rows,width:rows[0].length,height:rows.length,
+  start:coordinate(rows,"S"),exit:coordinate(rows,"X"),plates,goals,cores:goals.map(id=>({id,...coordinate(rows,id)})),
+  doors:plates.filter(p=>coordinate(rows,p.id.toUpperCase())).map(p=>({id:p.id.toUpperCase(),plate:p.id,...coordinate(rows,p.id.toUpperCase())})),hazards:[],...extra});
+}
+export const onboarding=authored("intro","첫 잔상",[
+ "#########","#a.#....#","#..A..X.#","#S.#....#","#########"
+],{chapter:0,grade:"입문",charge:1,hint:"위로 두 칸 이동한 뒤 기록하세요. 잔상이 A를 누르면 문을 통과할 수 있습니다."});
+const arena=["###############","#.........#.#.#","#..a...1..#.#.#","#....#....#.#.#","#S.....c..ACBX#","#....#....#.#.#","#..b...2..#.#.#","#.........#.#.#","###############"];
+const phase=(start,end,on,off,hold=2)=>({start,end,on,off,hold});
+export const advancedLevels=Object.freeze([
+ authored(13,"해제와 재방문",arena.map(row=>row.replace("c",".").replace("C",".")),{
+  goals:[],cores:[],requiredEchoes:2,exitWindow:[22,28],
+  phases:[phase(4,7,["a"],["b"]),phase(8,11,["b"],["a"]),phase(14,18,["a","b"],[])],
+  hint:"첫 잔상은 A를 두 박자 누른 뒤 떠났다가 돌아와야 합니다. B의 도착은 그 빈 구간에 맞추세요."}),
+ authored(14,"교대 회로",arena.map(row=>row.replace("c",".").replace("C",".")),{
+  requiredEchoes:2,exitWindow:[34,40],
+  phases:[phase(4,7,["a"],["b"]),phase(8,11,["b"],["a"]),phase(14,18,["a","b"],[]),phase(19,22,["a"],["b"]),phase(25,28,["a","b"],[],3)],
+  hint:"A와 B 모두 재방문이 필요합니다. 회로 대기 중 코어 1과 2를 회수하세요."}),
+ authored(15,"세 갈래의 귀환",arena,{
+  requiredEchoes:3,charge:3,exitWindow:[36,42],
+  phases:[phase(4,7,["a"],["b","c"]),phase(8,11,["b"],["a","c"]),phase(12,15,["c"],["a","b"]),phase(18,21,["a","c"],["b"]),phase(26,29,["a","b","c"],[],3)],
+  hazards:[{cells:[[9,4]],period:8,on:3,offset:0}],
+  hint:"A → B → C로 교대하고 A가 먼저 돌아옵니다. 마지막 세 박자 동시 유지 뒤 출구 시간을 맞추세요."})
+]);
+export const levels=Object.freeze([...legacyLevels,...advancedLevels]);
+export const allLevels=Object.freeze([onboarding,...levels]);
+export function getLevel(id){const level=allLevels.find(l=>l.id===id);if(!level)throw new RangeError("Unknown level");return level;}

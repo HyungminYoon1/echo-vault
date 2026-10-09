@@ -10,11 +10,27 @@ export function createRun(id=1,echoes=[]){
  const level=getLevel(id);
  if(!Array.isArray(echoes)||echoes.length>MAX_ECHOES)throw new RangeError("Echo limit");
  for(const echo of echoes)if(!Array.isArray(echo.path)||echo.path.length<2||echo.path.length>level.limit+1||!same(echo.path[0],level.start)||echo.path.some(p=>!Number.isInteger(p.x)||!Number.isInteger(p.y)||p.x<0||p.x>=level.width||p.y<0||p.y>=level.height))throw new TypeError("Invalid echo");
- return {version:1,levelId:id,tick:0,player:{...level.start},echoes:copy(echoes),path:[{...level.start}],actions:[],charges:Object.fromEntries(level.doors.map(d=>[d.id,0])),collected:[],status:"playing",reason:"",failure:null,hints:0};
+ return {version:2,levelId:id,tick:0,player:{...level.start},echoes:copy(echoes),path:[{...level.start}],actions:[],charges:Object.fromEntries(level.doors.map(d=>[d.id,0])),collected:[],phase:0,phaseHold:0,status:"playing",reason:"",failure:null,hints:0};
 }
 export function actors(state){return [state.player,...state.echoes.map(e=>echoPosition(e,state.tick))];}
 export function plateStates(state){return getLevel(state.levelId).plates.map(p=>({...p,occupied:actors(state).some(actor=>same(actor,p))}));}
-export function doorStates(state){const level=getLevel(state.levelId);return level.doors.map(d=>({...d,charge:state.charges[d.id]??0,open:(state.charges[d.id]??0)>=level.charge}));}
+export function doorStates(state){const level=getLevel(state.levelId);return level.doors.map(d=>({...d,charge:state.charges[d.id]??0,open:(state.charges[d.id]??0)>=level.charge&&(!level.phases||state.phase===level.phases.length)}));}
+export function relayPlates(state){
+ const level=getLevel(state.levelId);
+ return level.plates.filter(p=>state.echoes.some(e=>same(echoPosition(e,state.tick),p))).map(p=>p.id);
+}
+function advanceRelay(next,level){
+ if(!level.phases||next.echoes.length<level.requiredEchoes)return;
+ const phase=level.phases[next.phase],occupied=relayPlates(next);
+ if(phase){
+  const inWindow=next.tick>=phase.start&&next.tick<=phase.end;
+  const matches=phase.on.every(id=>occupied.includes(id))&&phase.off.every(id=>!occupied.includes(id));
+  next.phaseHold=inWindow&&matches?next.phaseHold+1:0;
+  if(next.phaseHold>=phase.hold){next.phase++;next.phaseHold=0;}
+  else if(next.tick>=phase.end){next.status="failed";next.failure="timing";next.reason="회로 "+(next.phase+1)+"의 동기화 시간을 놓쳤습니다.";}
+ }
+ if(next.status==="playing"&&next.tick>level.exitWindow[1]){next.status="failed";next.failure="timing";next.reason="출구 시간이 지났습니다.";}
+}
 export function canEnter(state,position){
  const level=getLevel(state.levelId);
  if(position.x<0||position.y<0||position.x>=level.width||position.y>=level.height||level.rows[position.y][position.x]==="#")return false;
@@ -30,6 +46,7 @@ export function advance(state,command){
  next.path.push({...next.player});next.actions.push(command);
  const occupied=plateStates(next);
  for(const door of level.doors){const held=occupied.find(p=>p.id===door.plate)?.occupied;next.charges[door.id]=held?Math.min(level.charge,(state.charges[door.id]??0)+1):0;}
+ advanceRelay(next,level);
  if(activeHazards(level,next.tick).some(p=>same(p,next.player))){next.status="failed";next.failure="laser";next.reason="레이저에 감지되었습니다. 안전한 칸에서 박자를 기다리세요.";}
  const core=level.cores.find(c=>same(c,next.player));
  if(next.status==="playing"&&core&&!next.collected.includes(core.id)){
@@ -37,8 +54,8 @@ export function advance(state,command){
   else next.collected.push(core.id);
  }
  if(next.status==="playing"&&same(next.player,level.exit)){
-  if(next.collected.length===level.goals.length&&doorStates(next).every(d=>d.open)){next.status="won";next.reason="모든 잠금장치와 서명을 동기화했습니다.";}
-  else next.reason="탈출에는 모든 잠금장치와 순서대로 회수한 코어가 필요합니다.";
+  if(next.collected.length===level.goals.length&&doorStates(next).every(d=>d.open)&&(!level.exitWindow||(next.tick>=level.exitWindow[0]&&next.tick<=level.exitWindow[1]))){next.status="won";next.reason="탈출 성공";}
+  else next.reason=level.exitWindow?"출구 시간과 코어·잠금 상태를 확인하세요.":"모든 문을 열고 코어를 순서대로 회수하세요.";
  }
  if(next.status==="playing"&&next.tick>=level.limit){next.status="failed";next.failure="timeout";next.reason="15초의 기록 시간이 끝났습니다. 이 경로를 잔상으로 보관하거나 다시 설계하세요.";}
  return {state:next,accepted:allowed,event:next.status==="playing"?(allowed?"move":"blocked"):next.status};
