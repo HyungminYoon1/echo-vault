@@ -115,6 +115,7 @@ $("result-close").addEventListener("click",()=>{resultDismissed=true;$("result-o
 for(const button of document.querySelectorAll("[data-practice-level]"))button.addEventListener("click",()=>{choose(Number(button.dataset.practiceLevel));board.focus({preventScroll:true});});
 for(const button of document.querySelectorAll("[data-move]"))button.addEventListener("click",()=>{pause();tick(button.dataset.move);board.focus({preventScroll:true});});
 document.addEventListener("keydown",event=>{
+ if(event.isComposing||event.keyCode===229)return;
  if(document.querySelector("dialog[open]")||["INPUT","SELECT","TEXTAREA"].includes(event.target.tagName))return;
  const boardActive=event.target===board||event.target===document.body;
  if(!boardActive)return;

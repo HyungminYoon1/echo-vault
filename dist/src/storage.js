@@ -8,6 +8,6 @@ export function loadSave(storage){
  catch{return {status:"invalid"};}
 }
 export function writeSave(storage,state,records){
- try{if(!storage)return false;storage.setItem(SAVE_KEY,encodeSave(state,records));return true;}catch{return false;}
+ try{if(!storage)return false;const raw=encodeSave(state,records);storage.setItem(SAVE_KEY,raw);return storage.getItem(SAVE_KEY)===raw;}catch{return false;}
 }
 export function clearSave(storage){try{if(!storage)return false;storage.removeItem(SAVE_KEY);return true;}catch{return false;}}

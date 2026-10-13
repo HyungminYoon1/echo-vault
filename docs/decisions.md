@@ -1,5 +1,14 @@
 # Decisions
 
+## D09 — systematic input and durable-save audit (2026-10-13)
+
+- Context: 실제회귀에서 no-op/stale/deniedread도 저장성공보고, IME조합이단축키/초점변경.
+- Options: setItem만신뢰 / 형식변경 / own-key동일문자열readback;조합키실행 / 모든키비활성화 / isComposing와229만무시.
+- Decision: storage.js의기존ownkey쓰기뒤readback확인, 실패는기존memory-only경로. app.js는조합중게임단축키/초점변경하지않음. 새저장key/field/cap/retention/network/score/version변경없음.
+- Rationale: documented durable-save전제/입력의도를지키는conservative localfix. 실제FAIL후최소수정및같은testPASS. Legitimateassertions/합법replays유지.
+- Affected files: dist/src/app.js, dist/src/storage.js, test/edge.test.js, tools/edge-browser.mjs, docs/edge-cases-20261013.md, docs/verification.md.
+- Review: readback은cross-tab transaction/diskdurability보증아님. RealOSIME/multi-tab NOT_RUN;syntheticfixture/actualUI분리. Nodecases기존CI에포함/browserharness수동.
+
 ## D08 — 실제 잔상 시간표와 종료 입력 (2026-10-13)
 
 - Context: 시간 회로는 누름뿐 아니라 해제·재방문을 요구한다. 기존 화면은 현재 압력판과 현재 입력만 표시하며, 완료 뒤 힌트가 점수를 바꿀 수 있었다.

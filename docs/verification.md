@@ -1,5 +1,9 @@
 # Verification record
 
+## 2026-10-13 — systematic edge-case audit / LOCAL
+
+[경계 매트릭스·신규 테스트·실패 전후·명령·소스 및 미검증 범위](edge-cases-20261013.md). 기존48 + 신규6 = npm test 54/54 PASS; npm run check / git diff --check PASS. 신규5개 baseline PASS는 coverage추가이며 readback1개와 IME browser회귀만 RED_GREEN. 격리 actualChrome primary/negative flows 및1440/390/320입력·캡처 PASS. Browserharness 현CI미실행/remoteCI·LIVE NOT_RUN. 공용rankingclient/rules보존.
+
 ## 2026-10-13 — 종료 입력·잔상 시간표·설계 과제 / LOCAL
 
 - UI 변경: YES. 실제 잔상별 압력판 점유 구간, 13/14/15 설계 과제, 결과 닫기. 완료/실패 뒤 힌트 차단. 캠페인 배치·승리 조건·점수·저장 키/형식 유지.
