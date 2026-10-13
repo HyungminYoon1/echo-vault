@@ -1,5 +1,14 @@
 # Decisions
 
+## D08 — 실제 잔상 시간표와 종료 입력 (2026-10-13)
+
+- Context: 시간 회로는 누름뿐 아니라 해제·재방문을 요구한다. 기존 화면은 현재 압력판과 현재 입력만 표시하며, 완료 뒤 힌트가 점수를 바꿀 수 있었다.
+- Options: 해답 경로 공개; 새 규칙·단계 추가; 현재 잔상의 실제 구간을 읽고 기존 13–15번에 설계 과제 연결.
+- Decision: 순수 echoSchedule은 잔상별·압력판별 0..60박자의 연속 점유를 양 끝 포함 구간으로 반환한다. 마지막 위치 유지도 포함하며 최대 3×3×61=549회 비교다. 앱은 이를 표시하고 과제 버튼으로 기존 금고의 새 시도를 시작한다. 종료 후 힌트는 버튼과 핸들러에서 차단한다. 결과 닫기는 결과만 숨기며 다음 실제 입력·재시작·복원에서 다시 표시한다.
+- Rationale: 기록끼리 해제 구간을 비교할 수 있고, 결과를 닫아 작은 화면에서 취소·시간표를 읽을 수 있다. 완료 점수·힌트 근거를 종료 뒤 바꾸지 않는다.
+- Affected: dist/src/model.js, app.js, dist/index.html, styles.css, test/relay.test.js, tools/ui-regression.cjs, docs/provenance.md.
+- Review: 캠페인·저장 형식·점수·기존 기록 유지. 자동 기록·정답 배치 없음. 시간표는 잔상별 구간이며 판 전체 점유는 합집합이다. 실제 브라우저 성공/실패/복원과 모바일 결과는 verification.md에 기록한다.
+
 ## D05 — Approved bounded private autosave (2026-10-09)
 
 - Context: The user explicitly approved local persistence, current-run resume and deletion. This supersedes the storage prohibition in D02 and page-memory statements in D03/D04 for these two documented keys only.

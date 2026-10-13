@@ -1,5 +1,7 @@
 # ECHO VAULT — 시간의 금고
 
+2026-10-13 로컬 개선: 기록된 잔상의 누름·해제 시간표와 13–15번 설계 과제를 추가했습니다. 종료 뒤 힌트는 잠기며 결과를 닫아 기록을 살펴볼 수 있습니다. [검증과 한계](docs/verification.md) · [과제 근거](docs/provenance.md).
+
 이동을 기록하고 되감아, 잔상과 함께 문을 여는 시간 퍼즐입니다.
 
 [게임](https://hyungminyoon1.github.io/echo-vault/) · [WEB LAB](https://hyungminyoon1.github.io/web-lab/) · [소스](https://github.com/HyungminYoon1/echo-vault)

@@ -1,6 +1,6 @@
 import test from "node:test";
 import assert from "node:assert/strict";
-import {createRun,advance,sealEcho,doorStates,relayPlates,evaluate} from "../dist/src/model.js";
+import {createRun,advance,sealEcho,doorStates,relayPlates,evaluate,echoSchedule} from "../dist/src/model.js";
 import {getLevel} from "../dist/src/levels.js";
 import {relayWitnesses,relayExitWitness,solve} from "../tools/witnesses.mjs";
 const play=(state,actions)=>actions.reduce((s,a)=>advance(s,a).state,state);
@@ -10,6 +10,19 @@ function team(id,legs=relayWitnesses(id)){
  for(const leg of legs){state=play(state,leg);assert.equal(state.status,"playing");state=sealEcho(state);}
  return state;
 }
+test("recorded plate schedule exposes inclusive release/revisit and final hold without advancing",()=>{
+ const state=team(13),before=structuredClone(state);
+ assert.deepEqual(echoSchedule(state),[
+  {slot:1,plate:"a",intervals:[[4,5],[13,60]]},
+  {slot:1,plate:"b",intervals:[]},
+  {slot:2,plate:"a",intervals:[]},
+  {slot:2,plate:"b",intervals:[[8,60]]}
+ ]);
+ assert.deepEqual(state,before);
+ assert.deepEqual(echoSchedule(play(state,["wait"])),echoSchedule(state));
+ const latch=team(13,[relayWitnesses(13)[0].slice(0,5),relayWitnesses(13)[1]]);
+ assert.deepEqual(echoSchedule(latch)[0].intervals,[[4,60]]);
+});
 test("playable onboarding needs an echo and finishes through ordinary commands",()=>{
  const witness=solve("intro");assert.equal(witness.state.status,"won");assert.equal(witness.state.tick,6);assert.equal(witness.result.score,2730);
  let alone=play(createRun("intro"),["up","up","down","right","right",...wait(55)]);

@@ -1,5 +1,17 @@
 # Verification record
 
+## 2026-10-13 — 종료 입력·잔상 시간표·설계 과제 / LOCAL
+
+- UI 변경: YES. 실제 잔상별 압력판 점유 구간, 13/14/15 설계 과제, 결과 닫기. 완료/실패 뒤 힌트 차단. 캠페인 배치·승리 조건·점수·저장 키/형식 유지.
+- BUG BEFORE: tools/ui-regression.cjs의 입문 실제 완료 후 hint.isDisabled 검사가 실패했다. 수정 후 동일 입력 통과. 공개 앱의 상태·점수·저장 승리를 주입하지 않았다. UI 회귀 파일은 loopback 페이지를 먼저 연 뒤 Playwright CLI run-code --filename tools/ui-regression.cjs로 실행한다.
+- LOCAL: npm test 48/48 PASS, fail/skipped 0 (103396.4202ms). 기존 47개 유지 + 실제 기록의 양 끝 포함 점유/해제/최종 유지 검증1개. 모든15 캠페인과 입문 해답, 기존 SHA256 회귀·시간 실패·저장/요약 시험 포함. npm run check PASS(10 public files), git diff --check PASS.
+- BROWSER: 격리 Playwright 세션, loopback, 1440×1000/390×900/320×900. 13번 실제 두 잔상, 9박자 복원, 22박자/2260점 완료; 결과 닫기→취소→재완료 결과 표시. A 영구 유지의 11박자 동기화 실패→결과 닫기→취소→같은 잔상 재시도. 320px 화면 버튼으로 입문6박자/2730점 완료. 관측한 document overflow/pageerror/원격 요청0.
+- 캡처: ignored output/qa-20261013/desktop.png(13번9박자·시간표), mobile-390.png(동기화 실패), mobile-320.png(실제 입문 완료). 실제 이미지를 열어 시간표·버튼·결과 배치를 확인했다.
+- 선택자: .practice-notes summary, [data-practice-level], #echo-schedule, #result-close, #hint, #resume, #undo, [data-move].
+- 변경 파일: dist/index.html, dist/styles.css, dist/src/app.js/model.js, test/relay.test.js, tools/ui-regression.cjs, README.md, docs/decisions.md/verification.md/provenance.md.
+- 소스 범위: 저장소 PARTIAL(전체 목록 후 관련 선택). architecture/requirements/README/decisions VERIFIED; api-spec/AGENTS 없음. 변경 파일·모델/캠페인/저장 코덱·직접 관련 시험과 witness VERIFIED. 변경 없는 아트·배포 workflow와 모든 CSS 규칙의 새 전수 심사는 하지 않았다.
+- NOT_RUN: 물리 터치 기기·다른 브라우저·보조기술, 전체 캠페인 개별 브라우저 완주, 새 저장 거부/다중탭 UI, 사람의 난도 평가, 원격 CI/LIVE. 저장 예외는 기존 Node double 시험이다. 커밋/푸시/배포/갤러리 편집/다른 에이전트/외부 점수 제출0. 설명 근거: provenance.md.
+
 ## 2026-10-09 — V2 local implementation handoff
 
 Source scope: VERIFIED — architecture.md, requirements.md, README.md, docs/decisions.md, docs/verification.md; all dist sources/assets, tests, witness/check/preview tools, package.json, .gitattributes/.gitignore and Pages workflow. api-spec.md and repository/parent AGENTS.md were not present; user-provided AGENTS instructions applied. Initial git status was clean. Sibling directory names were inventoried only to match the 15-app summary whitelist; no sibling content was reviewed or modified.

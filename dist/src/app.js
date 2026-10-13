@@ -1,5 +1,5 @@
 import {levels,allLevels,getLevel} from "./levels.js";
-import {createRun,advance,sealEcho,removeEcho,restartRun,evaluate,describe,doorStates,plateStates,hazardActive,UNDO_LIMIT,TICK_SECONDS} from "./model.js";
+import {createRun,advance,sealEcho,removeEcho,restartRun,evaluate,describe,doorStates,plateStates,hazardActive,echoSchedule,UNDO_LIMIT,TICK_SECONDS} from "./model.js";
 import {paint} from "./render.js";
 import {recordWin,completedCount} from "./save.js";
 import {browserStorage,loadSave,writeSave,clearSave} from "./storage.js";
@@ -8,6 +8,7 @@ const $=id=>document.getElementById(id),board=$("board"),ctx=board.getContext("2
 const storage=browserStorage();
 let saved=loadSave(storage),records=saved.records??new Map();
 let state=createRun("intro"),running=false,frame=0,last=0,held=null,history=[],hintUsed=false,loop=1,focusReturn=null;
+let resultDismissed=false;
 const commandMap={ArrowUp:"up",KeyW:"up",ArrowRight:"right",KeyD:"right",ArrowDown:"down",KeyS:"down",ArrowLeft:"left",KeyA:"left",Space:"wait"};
 const text=(id,value)=>{$(id).textContent=value;};
 const node=(tag,content,cls)=>{const e=document.createElement(tag);if(content!==undefined)e.textContent=content;if(cls)e.className=cls;return e;};
@@ -32,6 +33,7 @@ function tick(command="wait"){
  if(state.status!=="playing")return;
  history.push(structuredClone(state));if(history.length>UNDO_LIMIT)history.shift();
  const result=advance(state,command);state=result.state;
+ resultDismissed=false;
  if(!result.accepted&&command!=="wait")setStatus("벽 또는 닫힌 문입니다.");
  else if(state.collected.length>history.at(-1).collected.length)setStatus("코어 "+state.collected.at(-1)+" 회수");
  if(state.status!=="playing"){
@@ -53,6 +55,7 @@ function play(){
  running=true;held=null;last=0;setStatus("실시간 기록 중. 이동하지 않으면 대기 박자가 기록됩니다.");update();frame=requestAnimationFrame(animate);board.focus({preventScroll:true});
 }
 function replace(next,message,{newLoop=false,newLevel=false,persist=true}={}){
+ resultDismissed=false;
  if(!newLevel)next.hints=state.hints;
  running=false;held=null;cancelAnimationFrame(frame);frame=0;last=0;state=next;history=[];hintUsed=state.hints>0;$("hint-copy").hidden=!hintUsed;if(hintUsed)text("hint-copy",getLevel(state.levelId).hint);if(newLoop)loop++;update();draw();setStatus(message);
  if(persist)autosave();
@@ -87,10 +90,13 @@ function update(){
  for(const door of summary.doors){const row=node("div",undefined,"lock-row"+(door.open?" open":""));const track=node("div",undefined,"lock-charge"),bar=node("span");bar.style.width=door.charge/level.charge*100+"%";track.append(bar);row.append(node("span",door.id,"lock-id"),track,node("small",door.open?"OPEN":door.charge+"/"+level.charge));locks.append(row);}
  const cores=$("core-list");cores.replaceChildren();if(!level.goals.length)cores.append(node("span","없음"));else for(const id of level.goals)cores.append(node("span","◇ "+id,"core"+(state.collected.includes(id)?" done":id===level.goals[state.collected.length]?" next":"")));
  text("echo-count",state.echoes.length+"/3");const echoes=$("echo-list");echoes.replaceChildren();for(let i=0;i<3;i++){const e=state.echoes[i],slot=node("div",undefined,"echo-slot"+(e?" used":""));slot.append(node("span","0"+(i+1)),node("span",e?"ECHO "+(i+1):"EMPTY SLOT"),node("span",e?((e.path.length-1)*.25).toFixed(2)+"s":"—"));echoes.append(slot);}
+ const schedule=$("echo-schedule");schedule.replaceChildren();
+ for(const entry of echoSchedule(state))schedule.append(node("li",`잔상 ${entry.slot} · ${entry.plate.toUpperCase()}: ${entry.intervals.map(([a,b])=>a===b?`${a}박자`:`${a}–${b}박자`).join(", ")||"누름 없음"}`));
+ if(!state.echoes.length)schedule.append(node("li","잔상을 기록하면 누름·해제 구간을 여기서 비교할 수 있습니다."));
  $("laser-section").hidden=!level.hazards.length;const lasers=$("laser-list");lasers.replaceChildren();level.hazards.forEach((h,i)=>{const row=node("div",undefined,"laser-row");row.append(node("span","0"+(i+1)));for(let k=0;k<h.period;k++)row.append(node("span",undefined,"laser-pip"+(hazardActive(h,k)?" on":"")+(k===(state.tick+1)%h.period?" next":"")));lasers.append(row);});
  const timeline=$("timeline");timeline.replaceChildren();for(let i=0;i<60;i++){const command=state.actions[i],cell=node("span",command?{up:"↑",down:"↓",left:"←",right:"→",wait:"·"}[command]:"","timeline-cell"+(command?" used":"")+(command==="wait"?" wait":"")+(i===state.tick?" current":""));cell.setAttribute("title",(i+1)+"박자"+(command?" · "+command:""));timeline.append(cell);}
  $("record").disabled=state.echoes.length>=3||state.path.length<2||state.status==="won"||(state.status==="failed"&&state.failure!=="timeout");$("play").disabled=state.status!=="playing";$("undo").disabled=!history.length;$("remove-echo").disabled=!state.echoes.length;document.querySelectorAll("[data-move]").forEach(button=>{button.disabled=state.status!=="playing";});
- $("hint").disabled=hintUsed;$("result-overlay").hidden=state.status==="playing";
+ $("hint").disabled=hintUsed||state.status!=="playing";$("result-overlay").hidden=state.status==="playing"||resultDismissed;
  if(state.status!=="playing"){
   text("result-kicker",state.status==="won"?(state.hints?"힌트 사용":"완주"):"재시도");text("result-title",state.status==="won"?"탈출 성공":state.failure==="timeout"?"시간 종료":state.failure==="timing"?"동기화 실패":"기록 실패");text("result-copy",state.status==="won"?`3000 − ${state.tick}박자×20 − 잔상 ${state.echoes.length}×150 − 힌트 ${state.hints}×300`:state.reason);const numbers=$("result-numbers");numbers.replaceChildren();
   for(const[v,label]of [[summary.score,"POINTS"],[summary.seconds.toFixed(2),"SECONDS"],[summary.echoes,"ECHOES"]]){const div=node("div",v);div.append(node("small",label));numbers.append(div);}
@@ -104,7 +110,9 @@ $("result-retry").addEventListener("click",()=>state.failure==="timeout"&&state.
 $("campaign").addEventListener("click",()=>showDialog("campaign-dialog"));$("help").addEventListener("click",()=>showDialog("help-dialog"));
 for(const button of document.querySelectorAll("[data-close]"))button.addEventListener("click",()=>$(button.dataset.close).close());
 for(const dialog of document.querySelectorAll("dialog"))dialog.addEventListener("close",()=>{(focusReturn??board).focus({preventScroll:true});});
-$("hint").addEventListener("click",()=>{if(hintUsed)return;hintUsed=true;state.hints++;text("hint-copy",getLevel(state.levelId).hint);$("hint-copy").hidden=false;autosave();update();setStatus("힌트 사용 · −300점");});
+$("hint").addEventListener("click",()=>{if(hintUsed||state.status!=="playing")return;hintUsed=true;state.hints++;text("hint-copy",getLevel(state.levelId).hint);$("hint-copy").hidden=false;autosave();update();setStatus("힌트 사용 · −300점");});
+$("result-close").addEventListener("click",()=>{resultDismissed=true;$("result-overlay").hidden=true;board.focus({preventScroll:true});});
+for(const button of document.querySelectorAll("[data-practice-level]"))button.addEventListener("click",()=>{choose(Number(button.dataset.practiceLevel));board.focus({preventScroll:true});});
 for(const button of document.querySelectorAll("[data-move]"))button.addEventListener("click",()=>{pause();tick(button.dataset.move);board.focus({preventScroll:true});});
 document.addEventListener("keydown",event=>{
  if(document.querySelector("dialog[open]")||["INPUT","SELECT","TEXTAREA"].includes(event.target.tagName))return;

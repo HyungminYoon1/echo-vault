@@ -19,6 +19,20 @@ export function relayPlates(state){
  const level=getLevel(state.levelId);
  return level.plates.filter(p=>state.echoes.some(e=>same(echoPosition(e,state.tick),p))).map(p=>p.id);
 }
+// Inclusive occupied beats of each actual recording, including its final hold.
+export function echoSchedule(state){
+ const level=getLevel(state.levelId),result=[];
+ for(const [i,echo] of state.echoes.entries())for(const plate of level.plates){
+  const intervals=[];let start=null;
+  for(let tick=0;tick<=level.limit;tick++){
+   const held=same(echoPosition(echo,tick),plate);
+   if(held&&start===null)start=tick;
+   if(start!==null&&(!held||tick===level.limit)){intervals.push([start,held?tick:tick-1]);start=null;}
+  }
+  result.push({slot:i+1,plate:plate.id,intervals});
+ }
+ return result;
+}
 function advanceRelay(next,level){
  if(!level.phases||next.echoes.length<level.requiredEchoes)return;
  const phase=level.phases[next.phase],occupied=relayPlates(next);
